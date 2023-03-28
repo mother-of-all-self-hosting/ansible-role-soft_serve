@@ -39,4 +39,4 @@ soft_serve_systemd_wanted_services_list: []
 
 # Controls whether the container exposes a port (the same in the container)
 # that can be used to access soft-serve from outside the container
-soft_serve_container_bind_port: "23231"
+soft_serve_container_bind_port: ''
