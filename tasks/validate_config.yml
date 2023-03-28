@@ -1,0 +1,14 @@
+---
+
+- name: Fail if required Soft Serve settings not defined
+  ansible.builtin.fail:
+    msg: >
+      You need to define a required configuration setting (`{{ item }}`).
+  when: "vars[item] == ''"
+  with_items:
+    - soft_serve_identifier
+    - soft_serve_hostname
+    - soft_serve_container_bind_port
+    - soft_serve_initial_admin_key
+    - soft_serve_uid
+    - soft_serve_gid

@@ -1,0 +1,39 @@
+---
+
+- name: Check existence of Soft Serve service
+  ansible.builtin.stat:
+    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
+  register: soft_serve_service_stat
+
+- when: soft_serve_service_stat.stat.exists | bool
+  block:
+    - name: Ensure Soft Serve is stopped
+      ansible.builtin.systemd:
+        name: "{{ soft_serve_identifier }}"
+        state: stopped
+        enabled: false
+        daemon_reload: true
+
+    - name: Ensure Soft Serve systemd service doesn't exist
+      ansible.builtin.file:
+        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
+        state: absent
+
+- name: Check existence of Soft Serve local data path
+  ansible.builtin.stat:
+    path: "{{ soft_serve_data_path }}"
+  register: soft_serve_data_path_stat
+
+# We just want to notify the user. Deleting data is too destructive.
+- when: soft_serve_data_path_stat.stat.exists | bool
+  name: Notify if Soft Serve local data remains
+  ansible.builtin.set_fact:
+    devture_playbook_runtime_messages_list: |
+      {{
+        devture_playbook_runtime_messages_list | default([])
+        +
+        [
+          "Note: You are not using a local soft_serve instance, but some old data remains from before in `{{ soft_serve_data_path }}`. Feel free to delete it."
+        ]
+      }}
+

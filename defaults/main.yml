@@ -1,0 +1,42 @@
+---
+# Project source code URL: https://github.com/charmbracelet/soft-serve
+
+soft_serve_enabled: true
+
+soft_serve_identifier: soft-serve
+
+soft_serve_hostname: ''
+
+soft_serve_initial_admin_key: ''
+
+soft_serve_uid: ''
+soft_serve_gid: ''
+
+soft_serve_base_path: "/{{ soft_serve_identifier }}"
+soft_serve_data_path: "{{ soft_serve_base_path }}/data"
+
+soft_serve_version: v0.4.6
+
+soft_serve_container_image: "{{ soft_serve_container_image_registry_prefix }}charmcli/soft-serve:{{ soft_serve_version }}"
+soft_serve_container_image_registry_prefix: docker.io/
+soft_serve_container_image_force_pull: "{{ soft_serve_container_image.endswith(':latest') }}"
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+soft_serve_container_network: "{{ soft_serve_identifier }}"
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+soft_serve_container_additional_networks: []
+
+# A list of extra arguments to pass to the container
+soft_serve_container_extra_arguments: []
+
+# List of systemd services that the soft_serve systemd service depends on
+soft_serve_systemd_required_services_list: ['docker.service']
+
+# List of systemd services that the soft_serve systemd service wants
+soft_serve_systemd_wanted_services_list: []
+
+# Controls whether the container exposes a port (the same in the container)
+# that can be used to access soft-serve from outside the container
+soft_serve_container_bind_port: "23231"

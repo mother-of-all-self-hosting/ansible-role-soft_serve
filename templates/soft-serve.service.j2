@@ -1,0 +1,48 @@
+#jinja2: lstrip_blocks: "True"
+[Unit]
+Description=Soft Serve ({{ soft_serve_identifier }})
+{% for service in soft_serve_systemd_required_services_list %}
+Requires={{ service }}
+After={{ service }}
+{% endfor %}
+{% for service in soft_serve_systemd_wanted_services_list %}
+Wants={{ service }}
+{% endfor %}
+
+[Service]
+Type=simple
+Environment="HOME={{ devture_systemd_docker_base_systemd_unit_home_path }}"
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} kill {{ soft_serve_identifier }} 2>/dev/null || true'
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ soft_serve_identifier }} 2>/dev/null || true'
+
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
+			--rm \
+			--name={{ soft_serve_identifier }} \
+			--log-driver=none \
+			--user={{ soft_serve_uid }}:{{ soft_serve_gid }} \
+			--cap-drop=ALL \
+			--read-only \
+			--network={{ soft_serve_container_network }} \
+			-p {{ soft_serve_container_bind_port }}:{{ soft_serve_container_bind_port }} \
+			--env-file={{ soft_serve_base_path }}/env \
+			--mount type=bind,src={{ soft_serve_data_path }},dst=/soft-serve \
+			{% for arg in soft_serve_container_extra_arguments %}
+			{{ arg }} \
+			{% endfor %}
+			{{ soft_serve_container_image }}
+
+{% for network in soft_serve_container_additional_networks %}
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ soft_serve_identifier }}
+{% endfor %}
+
+ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ soft_serve_identifier }}
+
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} kill {{ soft_serve_identifier }} 2>/dev/null || true'
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ soft_serve_identifier }} 2>/dev/null || true'
+
+Restart=always
+RestartSec=30
+SyslogIdentifier={{ soft_serve_identifier }}
+
+[Install]
+WantedBy=multi-user.target
