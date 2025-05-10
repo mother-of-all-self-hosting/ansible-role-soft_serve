@@ -22,20 +22,20 @@ ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_s
 ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ soft_serve_identifier }} 2>/dev/null || true'
 
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
-			--rm \
-			--name={{ soft_serve_identifier }} \
-			--log-driver=none \
-			--user={{ soft_serve_uid }}:{{ soft_serve_gid }} \
-			--cap-drop=ALL \
-			--read-only \
-			--network={{ soft_serve_container_network }} \
-			-p {{ soft_serve_container_bind_port }}:{{ soft_serve_container_bind_port }} \
-			--env-file={{ soft_serve_base_path }}/env \
-			--mount type=bind,src={{ soft_serve_data_path }},dst=/soft-serve \
-			{% for arg in soft_serve_container_extra_arguments %}
-			{{ arg }} \
-			{% endfor %}
-			{{ soft_serve_container_image }}
+      --rm \
+      --name={{ soft_serve_identifier }} \
+      --log-driver=none \
+      --user={{ soft_serve_uid }}:{{ soft_serve_gid }} \
+      --cap-drop=ALL \
+      --read-only \
+      --network={{ soft_serve_container_network }} \
+      -p {{ soft_serve_container_bind_port }}:{{ soft_serve_container_bind_port }} \
+      --env-file={{ soft_serve_base_path }}/env \
+      --mount type=bind,src={{ soft_serve_data_path }},dst=/soft-serve \
+      {% for arg in soft_serve_container_extra_arguments %}
+      {{ arg }} \
+      {% endfor %}
+      {{ soft_serve_container_image }}
 
 {% for network in soft_serve_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ soft_serve_identifier }}
