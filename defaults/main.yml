@@ -38,7 +38,9 @@ soft_serve_container_network: "{{ soft_serve_identifier }}"
 
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
-soft_serve_container_additional_networks: []
+soft_serve_container_additional_networks: "{{ soft_serve_container_additional_networks_auto + soft_serve_container_additional_networks_custom }}"
+soft_serve_container_additional_networks_auto: []
+soft_serve_container_additional_networks_custom: []
 
 # A list of extra arguments to pass to the container
 soft_serve_container_extra_arguments: []
