@@ -43,6 +43,6 @@
 
 - name: Ensure Soft Serve systemd installed
   ansible.builtin.template:
-    src: "{{ role_path }}/templates/soft-serve.service.j2"
+    src: "{{ role_path }}/templates/systemd/soft-serve.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
     mode: 0644
