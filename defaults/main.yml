@@ -19,6 +19,7 @@ soft_serve_gid: ''
 soft_serve_base_path: "/{{ soft_serve_identifier }}"
 soft_serve_data_path: "{{ soft_serve_base_path }}/data"
 
+# renovate: datasource=docker depName=charmcli/soft-serve versioning=semver
 soft_serve_version: v0.4.7
 
 soft_serve_container_image: "{{ soft_serve_container_image_registry_prefix }}charmcli/soft-serve:{{ soft_serve_version }}"
