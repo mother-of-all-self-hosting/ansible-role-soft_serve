@@ -13,6 +13,7 @@ soft_serve_enabled: true
 
 soft_serve_identifier: soft-serve
 
+# The hostname at which Soft Serve is served.
 soft_serve_hostname: ''
 
 soft_serve_initial_admin_key: ''
