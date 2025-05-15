@@ -41,7 +41,7 @@
     driver: bridge
     driver_options: "{{ devture_systemd_docker_base_container_networks_driver_options }}"
 
-- name: Ensure Soft Serve systemd installed
+- name: Ensure Soft Serve systemd service is present
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/soft-serve.service.j2"
     dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
