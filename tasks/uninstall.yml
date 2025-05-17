@@ -11,14 +11,14 @@
 
 - when: soft_serve_service_stat.stat.exists | bool
   block:
-    - name: Ensure Soft Serve is stopped
+    - name: Ensure Soft Serve systemd service is stopped
       ansible.builtin.systemd:
         name: "{{ soft_serve_identifier }}"
         state: stopped
         enabled: false
         daemon_reload: true
 
-    - name: Ensure Soft Serve systemd service doesn't exist
+    - name: Ensure Soft Serve systemd service does not exist
       ansible.builtin.file:
         path: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
         state: absent
