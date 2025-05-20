@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2023 - 2025 Nikita Chernyi
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -15,13 +16,15 @@
     - "{{ soft_serve_base_path }}"
     - "{{ soft_serve_data_path }}"
 
-- name: Ensure Soft Serve environment variables file created
+- name: Ensure Soft Serve support files installed
   ansible.builtin.template:
-    src: "{{ role_path }}/templates/env.j2"
-    dest: "{{ soft_serve_base_path }}/env"
+    src: "{{ role_path }}/templates/{{ item }}.j2"
+    dest: "{{ soft_serve_base_path }}/{{ item }}"
     mode: 0640
     owner: "{{ soft_serve_uid }}"
     group: "{{ soft_serve_gid }}"
+  with_items:
+    - env
 
 - name: Ensure Soft Serve container image is pulled
   community.docker.docker_image:
