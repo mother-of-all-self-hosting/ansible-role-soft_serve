@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-
 - name: Check existence of Soft Serve service
   ansible.builtin.stat:
     path: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
   register: soft_serve_service_stat
 
-- when: soft_serve_service_stat.stat.exists | bool
+- name: Uninstall Soft Serve systemd services and files
+  when: soft_serve_service_stat.stat.exists | bool
   block:
     - name: Ensure Soft Serve systemd service is stopped
       ansible.builtin.systemd:
@@ -29,8 +29,8 @@
   register: soft_serve_data_path_stat
 
 # We just want to notify the user. Deleting data is too destructive.
-- when: soft_serve_data_path_stat.stat.exists | bool
-  name: Notify if Soft Serve local data remains
+- name: Notify if Soft Serve local data remains
+  when: soft_serve_data_path_stat.stat.exists | bool
   ansible.builtin.set_fact:
     devture_playbook_runtime_messages_list: |
       {{
@@ -40,4 +40,3 @@
           "Note: You are not using a local soft_serve instance, but some old data remains from before in `{{ soft_serve_data_path }}`. Feel free to delete it."
         ]
       }}
-
