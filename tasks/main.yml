@@ -4,6 +4,7 @@
 
 ---
 - name: Perform Soft Serve installation tasks
+  when: soft_serve_enabled | bool
   tags:
     - setup-all
     - setup-soft-serve
@@ -11,17 +12,15 @@
     - install-soft-serve
   block:
     - name: Validate Soft Serve configuration
-      when: soft_serve_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
     - name: Install Soft Serve
-      when: soft_serve_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/install.yml"
 
 - name: Perform Soft Serve uninstallation tasks
+  when: not soft_serve_enabled | bool
   tags:
     - setup-all
     - setup-soft-serve
   block:
     - name: Uninstall Soft Serve
-      when: not soft_serve_enabled | bool
       ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"
