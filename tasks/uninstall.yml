@@ -53,6 +53,6 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: You are not using a local soft_serve instance, but some old data remains from before in `{{ soft_serve_data_path }}`. Feel free to delete it."
+          "Note: You are not using a local soft_serve instance, but some old data remains from before in `" + soft_serve_data_path + "`. Feel free to delete it."
         ]
       }}
