@@ -54,6 +54,9 @@ soft_serve_systemd_required_services_list_auto: []
 soft_serve_systemd_required_services_list_custom: []
 
 # List of systemd services that the soft_serve systemd service wants
-soft_serve_systemd_wanted_services_list: []
+soft_serve_systemd_wanted_services_list: "{{ soft_serve_systemd_wanted_services_list_default + soft_serve_systemd_wanted_services_list_auto + soft_serve_systemd_wanted_services_list_custom }}"
+soft_serve_systemd_wanted_services_list_default: []
+soft_serve_systemd_wanted_services_list_auto: []
+soft_serve_systemd_wanted_services_list_custom: []
 
 soft_serve_initial_admin_key: ''
