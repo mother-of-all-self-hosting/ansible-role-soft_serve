@@ -24,6 +24,25 @@
         path: "{{ devture_systemd_docker_base_systemd_path }}/{{ soft_serve_identifier }}.service"
         state: absent
 
+    - name: Ensure Soft Serve support files does not exist
+      ansible.builtin.file:
+        path: "{{ soft_serve_base_path }}/{{ item }}"
+        state: absent
+      with_items:
+        - env
+
+    - name: Ensure Soft Serve local data path does not exist if empty
+      ansible.builtin.command:
+        cmd: "rmdir {{ soft_serve_data_path }}"
+      register: soft_serve_data_path_deletion_result
+      changed_when: soft_serve_data_path_deletion_result.rc == 0
+
+    - name: Ensure Soft Serve base path does not exist if empty
+      ansible.builtin.command:
+        cmd: "rmdir {{ soft_serve_base_path }}"
+      register: soft_serve_base_path_deletion_result
+      changed_when: soft_serve_base_path_deletion_result.rc == 0
+
     - name: Ensure Soft Serve container network does not exist via community.docker.docker_network
       when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
       community.docker.docker_network:
