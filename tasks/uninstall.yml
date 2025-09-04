@@ -36,12 +36,14 @@
         cmd: "rmdir {{ soft_serve_data_path }}"
       register: soft_serve_data_path_deletion_result
       changed_when: soft_serve_data_path_deletion_result.rc == 0
+      failed_when: false
 
     - name: Ensure Soft Serve base path does not exist if empty
       ansible.builtin.command:
         cmd: "rmdir {{ soft_serve_base_path }}"
       register: soft_serve_base_path_deletion_result
       changed_when: soft_serve_base_path_deletion_result.rc == 0
+      failed_when: false
 
     - name: Ensure Soft Serve container network does not exist via community.docker.docker_network
       when: devture_systemd_docker_base_container_network_creation_method == 'ansible-module'
