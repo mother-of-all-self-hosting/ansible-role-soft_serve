@@ -10,8 +10,9 @@
   when: "lookup('vars', item, default='') | string | length == 0"
   with_items:
     - soft_serve_identifier
-    - soft_serve_hostname
-    - soft_serve_container_bind_port
-    - soft_serve_initial_admin_key
     - soft_serve_uid
     - soft_serve_gid
+    - soft_serve_hostname
+    - soft_serve_container_network
+    - soft_serve_container_bind_port
+    - soft_serve_initial_admin_key
