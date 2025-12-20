@@ -45,7 +45,9 @@ soft_serve_container_additional_networks_auto: []
 soft_serve_container_additional_networks_custom: []
 
 # A list of extra arguments to pass to the container
-soft_serve_container_extra_arguments: []
+soft_serve_container_extra_arguments: "{{ soft_serve_container_extra_arguments_auto + soft_serve_container_extra_arguments_custom }}"
+soft_serve_container_extra_arguments_auto: []
+soft_serve_container_extra_arguments_custom: []
 
 # List of systemd services that the soft_serve systemd service depends on
 soft_serve_systemd_required_services_list: "{{ soft_serve_systemd_required_services_list_default + soft_serve_systemd_required_services_list_auto + soft_serve_systemd_required_services_list_custom }}"
