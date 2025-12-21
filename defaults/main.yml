@@ -44,7 +44,7 @@ soft_serve_container_additional_networks: "{{ soft_serve_container_additional_ne
 soft_serve_container_additional_networks_auto: []
 soft_serve_container_additional_networks_custom: []
 
-# A list of extra arguments to pass to the container
+# A list of extra arguments to pass to the container (`docker create` command)
 soft_serve_container_extra_arguments: "{{ soft_serve_container_extra_arguments_auto + soft_serve_container_extra_arguments_custom }}"
 soft_serve_container_extra_arguments_auto: []
 soft_serve_container_extra_arguments_custom: []
