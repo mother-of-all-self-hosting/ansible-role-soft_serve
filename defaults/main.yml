@@ -18,11 +18,11 @@ soft_serve_data_path: "{{ soft_serve_base_path }}/data"
 # renovate: datasource=docker depName=charmcli/soft-serve versioning=semver
 soft_serve_version: v0.11.1
 
-soft_serve_uid: ''
-soft_serve_gid: ''
+soft_serve_uid: ""
+soft_serve_gid: ""
 
 # The hostname at which Soft Serve is served.
-soft_serve_hostname: ''
+soft_serve_hostname: ""
 
 soft_serve_container_image: "{{ soft_serve_container_image_registry_prefix }}charmcli/soft-serve:{{ soft_serve_container_image_tag }}"
 soft_serve_container_image_tag: "{{ soft_serve_version }}"
@@ -33,7 +33,7 @@ soft_serve_container_image_force_pull: "{{ soft_serve_container_image.endswith('
 
 # Controls whether the container exposes a port (the same in the container)
 # that can be used to access soft-serve from outside the container
-soft_serve_container_bind_port: ''
+soft_serve_container_bind_port: ""
 
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 soft_serve_container_network: "{{ soft_serve_identifier }}"
@@ -61,4 +61,4 @@ soft_serve_systemd_wanted_services_list_default: []
 soft_serve_systemd_wanted_services_list_auto: []
 soft_serve_systemd_wanted_services_list_custom: []
 
-soft_serve_initial_admin_key: ''
+soft_serve_initial_admin_key: ""
