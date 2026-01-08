@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2023 - 2024 Nikita Chernyi
-# SPDX-FileCopyrightText: 2023 - 2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
+# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
 # SPDX-FileCopyrightText: 2025 MASH project contributors
-# SPDX-FileCopyrightText: 2025 Suguru Hirahara
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -62,3 +62,9 @@ soft_serve_systemd_wanted_services_list_auto: []
 soft_serve_systemd_wanted_services_list_custom: []
 
 soft_serve_initial_admin_key: ""
+
+# Specify the timezone
+soft_serve_environment_variables_tz: UTC
+
+# Additional environment variables.
+soft_serve_environment_variables_additional_variables: ""
