@@ -28,9 +28,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       --cap-drop=ALL \
       --read-only \
       --network={{ soft_serve_container_network }} \
-      {% if soft_serve_container_http_host_bind_port %}
-      -p {{ soft_serve_container_http_host_bind_port }}:{{ soft_serve_container_http_port }} \
-      {% endif %}
+      -p {{ soft_serve_container_bind_port }}:{{ soft_serve_container_bind_port }} \
       --env-file={{ soft_serve_base_path }}/env \
       --mount type=bind,src={{ soft_serve_data_path }},dst=/soft-serve \
       {% for arg in soft_serve_container_extra_arguments %}
