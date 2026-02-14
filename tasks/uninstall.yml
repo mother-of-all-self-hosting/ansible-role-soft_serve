@@ -50,6 +50,7 @@
       community.docker.docker_network:
         name: "{{ soft_serve_container_network }}"
         state: absent
+      register: soft_serve_network_deletion_result
 
     - name: Ensure Soft Serve container network does not exist via ansible.builtin.command
       when: devture_systemd_docker_base_container_network_creation_method == 'command'
@@ -57,8 +58,8 @@
         cmd: >-
           {{ devture_systemd_docker_base_host_command_docker }} network rm
           {{ soft_serve_container_network }}
-      register: network_deletion_result
-      changed_when: soft_serve_container_network in network_deletion_result.stdout
+      register: soft_serve_network_deletion_result
+      changed_when: soft_serve_container_network in soft_serve_network_deletion_result.stdout
 
 - name: Check existence of Soft Serve local data path
   ansible.builtin.stat:
