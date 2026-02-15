@@ -38,6 +38,9 @@ soft_serve_container_bind_port: ""
 # The base container network. It will be auto-created by this role if it doesn't exist already.
 soft_serve_container_network: "{{ soft_serve_identifier }}"
 
+# Control if the container network is deleted on uninstalling.
+soft_serve_container_network_deletion_enabled: true
+
 # A list of additional container networks that the container would be connected to.
 # The role does not create these networks, so make sure they already exist.
 soft_serve_container_additional_networks: "{{ soft_serve_container_additional_networks_auto + soft_serve_container_additional_networks_custom }}"
