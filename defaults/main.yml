@@ -29,7 +29,6 @@ soft_serve_container_image_tag: "{{ soft_serve_version }}"
 soft_serve_container_image_registry_prefix: "{{ soft_serve_container_image_registry_prefix_upstream }}"
 soft_serve_container_image_registry_prefix_upstream: "{{ soft_serve_container_image_registry_prefix_upstream_default }}"
 soft_serve_container_image_registry_prefix_upstream_default: docker.io/
-soft_serve_container_image_force_pull: "{{ soft_serve_container_image.endswith(':latest') }}"
 
 # Controls whether the container exposes a port (the same in the container)
 # that can be used to access soft-serve from outside the container
