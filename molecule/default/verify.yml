@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Verify Soft Serve systemd service
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Wait for Soft Serve service to become active (up to 180s)
+      ansible.builtin.systemd:
+        name: soft-serve.service
+      register: soft_serve_service
+      until: soft_serve_service.status.ActiveState == 'active'
+      retries: 36
+      delay: 5
+
+    - name: Assert Soft Serve service is active
+      ansible.builtin.assert:
+        that: soft_serve_service.status.ActiveState == 'active'
+        fail_msg: "soft-serve.service not active ({{ soft_serve_service.status.ActiveState }})"
+        success_msg: "soft-serve.service is active"
+
+    - name: Retrieve Soft Serve service log for debugging
+      when: soft_serve_debug_service_enabled | bool
+      ansible.builtin.command:
+        cmd: journalctl -xeu soft-serve.service
+      changed_when: false
+
+    - name: Show Soft Serve systemd service status summary
+      ansible.builtin.debug:
+        msg:
+          - "Soft Serve systemd: {{ soft_serve_service.status.ActiveState }}"
