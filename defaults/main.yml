@@ -108,6 +108,32 @@ soft_serve_container_cleanup_command: |
 
 soft_serve_initial_admin_key: ""
 
+# Controls the access level granted to users Soft Serve does not know: an SSH
+# key it has never seen, or - when `soft_serve_allow_keyless` permits it - a
+# connection carrying no key at all.
+#
+# Soft Serve keeps this in its own database, seeded to `read-only` when the
+# database is created. Left empty here, that stored value governs, so anyone who
+# can reach the SSH port may list and clone every non-private repository, and
+# repositories are not private unless they are made so. Set this to
+# `no-access`, `read-only`, `read-write` or `admin-access` to have the role
+# enforce a value instead.
+#
+# A non-empty value is not a seed: Soft Serve consults it on every access check
+# for as long as it is set, which also means the `settings anon-access` command
+# stops having any effect while it is.
+soft_serve_anon_access: ""
+
+# Controls whether Soft Serve accepts SSH connections that present no public key
+# at all. Such connections get whatever `soft_serve_anon_access` grants.
+#
+# As with `soft_serve_anon_access`, Soft Serve keeps this in its database, seeded
+# to `true`, and an empty value here leaves that stored value alone. Set it to
+# `false` to require a key, or to `true` to enforce keyless access; either way
+# the value then overrides the database for as long as it is set, and the
+# `settings allow-keyless` command stops having any effect.
+soft_serve_allow_keyless: ""
+
 # Specify the timezone
 soft_serve_environment_variables_tz: UTC
 

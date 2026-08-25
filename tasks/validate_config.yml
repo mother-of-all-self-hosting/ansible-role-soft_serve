@@ -27,3 +27,13 @@
     - soft_serve_container_bind_port
     - soft_serve_ssh_public_url
     - soft_serve_initial_admin_key
+
+# Soft Serve refuses to parse an unknown access level and exits before it ever
+# starts listening, so catching a typo here saves a crash loop later.
+- name: Fail if the Soft Serve anonymous access level is not one Soft Serve knows
+  ansible.builtin.fail:
+    msg: >-
+      `soft_serve_anon_access` is set to `{{ soft_serve_anon_access }}`, which Soft Serve does not
+      understand. Use one of: no-access, read-only, read-write, admin-access - or leave it empty
+      to let Soft Serve's own stored setting govern.
+  when: "soft_serve_anon_access | string | length > 0 and soft_serve_anon_access not in ['no-access', 'read-only', 'read-write', 'admin-access']"
