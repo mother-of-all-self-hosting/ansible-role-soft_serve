@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Nikita Chernyi
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -24,4 +25,5 @@
     - soft_serve_hostname
     - soft_serve_container_network
     - soft_serve_container_bind_port
+    - soft_serve_ssh_public_url
     - soft_serve_initial_admin_key
