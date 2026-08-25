@@ -1,6 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Patch releases of Soft Serve ARE automerged here. Soft Serve runs `migrate.Migrate()` on every start (cmd/soft/serve/serve.go), so a patch that added a migration would apply it unattended to a server holding real Git repositories - which is exactly why the decision rests on whether patches ever add one. They never have: pkg/db/migrate/migrations.go lists the same three migrations at v0.7.1 (the oldest tag upstream published, October 2023) as at v0.12.2, byte for byte, and no .sql file under pkg/db/migrate has been added or modified in between. That covers all 24 releases upstream has cut, 19 of them patch-level (v0.7.1 -> v0.7.6, v0.8.0 -> v0.8.5, v0.9.0 -> v0.9.1, v0.11.0 -> v0.11.6, v0.12.0 -> v0.12.2). The only commits to touch that directory since are a test file, a lint pass and a dependency bump.",
+    "What patch releases here do carry is security fixes, several of them merged from private forks: an LFS authorization fix in v0.12.1, SSH argument validation and SSRF hardening in v0.11.4, a DNS rebinding fix in v0.11.5. Those are the updates one least wants sitting in an unmerged branch.",
+    "The honest limitation: this is a 0.x project, and the Molecule suite installs fresh, so it structurally cannot cross an upgrade. Minor bumps (0.11 -> 0.12) still require review, and that is where this project's behavior changes have actually landed.",
+    "What gates the branch is a real Git round trip rather than a port check, because Soft Serve is reachable over SSH and nothing else. The suite hands the role a generated SSH key as its initial administrator, pushes a repository in, clones it back, and reads the payload a third time out of the bare repository under the role's own data path. It asserts that the version the binary in the running container reports is the literal `soft_serve_version` pins, that the clone URL Soft Serve advertises is the role's rather than its own `ssh://localhost:23231` fallback, that a second, valid but unknown key is refused a listing, a clone and a push, that a keyless connection is refused, and that nothing listens on the Git daemon and HTTP ports Soft Serve starts unless told otherwise.",
+    "`versioning=semver` on the annotation in defaults/main.yml is what keeps the registry noise out. `charmcli/soft-serve` publishes 350 tags, and strict semver leaves only the real vX.Y.Z releases: the `-amd64`, `-arm64` and `-armv7` per-architecture tags parse as prereleases and are skipped, while `latest`, `v0.12` and the `.sig` entries are not versions at all. The bare, unsuffixed tag this role uses exists for every release, so nothing real is filtered out, and the annotation sits on the leaf literal rather than on `soft_serve_container_image_tag`, which is derived from it."
+  ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.0.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.0.0",
+    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.0.0"
   ]
 }
