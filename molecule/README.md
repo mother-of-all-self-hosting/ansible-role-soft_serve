@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2018-2025 Slavi Pantaleev
+SPDX-FileCopyrightText: 2018-2026 Slavi Pantaleev
 SPDX-FileCopyrightText: 2019-2022 Aaron Raimist
 SPDX-FileCopyrightText: 2019-2023 MDAD project contributors
 SPDX-FileCopyrightText: 2023 QEDeD
@@ -48,6 +48,17 @@ Currently there is one testing scenario available.
 ### `default`
 
 Tests a standard Soft Serve installation.
+
+Soft Serve is reachable over SSH and nothing else, so the scenario is built around a real Git round trip rather than around port checks. It generates two SSH key pairs, makes one of them Soft Serve's initial administrator through the role, and then:
+
+- pushes a repository in over SSH and clones it back out, checking that the payload survives and that the bare repository landed under the role's own data path;
+- reads that payload a third time straight out of the bare repository, and Soft Serve's records (the repository, the administrator, the installed public key) straight out of its SQLite database;
+- asserts that the clone URL Soft Serve advertises is the one the role configured, rather than the `ssh://localhost:23231` it falls back to on its own;
+- asserts that the version the Soft Serve binary in the running container reports is the one `soft_serve_version` pins;
+- asserts that the second key — a perfectly valid key Soft Serve was simply never told about — can neither list, clone nor push, and that a connection presenting no key at all is refused;
+- asserts that nothing is listening on Soft Serve's Git daemon and HTTP ports, which it starts unless told otherwise.
+
+The scenario deliberately runs on a hostname and a port that are not Soft Serve's own defaults, so that these assertions cannot be satisfied by an instance which never saw the role's configuration.
 
 ## Running
 

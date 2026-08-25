@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -15,11 +16,32 @@
         cache_valid_time: 600
       when: ansible_facts["os_family"] == 'Debian'
 
+    # Soft Serve is reachable over SSH and nothing else, and the whole point of
+    # this suite is a real `git push` and `git clone` across that transport. The
+    # geerlingguy images carry python3 but neither an SSH client nor Git.
+    # `python3-requests` is what community.docker's modules need to talk to the
+    # Docker daemon.
     - name: Ensure required packages are installed for Soft Serve Molecule tests preparation
       ansible.builtin.package:
         name:
+          - git
+          - openssh-client
           - python3-requests
         state: present
+
+    # Generated here rather than in converge.yml because the role needs the
+    # public half before it renders the `env` file, while verify.yml needs the
+    # private half afterwards.
+    #
+    # `stranger` is the negative control: a syntactically perfect key that Soft
+    # Serve has simply never been told about.
+    - name: Generate the SSH key pairs for the Soft Serve Molecule probes
+      ansible.builtin.command:
+        cmd: ssh-keygen -q -t ed25519 -N '' -C molecule-{{ item }} -f /root/soft-serve-molecule-{{ item }}
+        creates: /root/soft-serve-molecule-{{ item }}
+      loop:
+        - admin
+        - stranger
 
     - name: Ensure Docker is installed for Soft Serve Molecule tests preparation
       ansible.builtin.include_role:

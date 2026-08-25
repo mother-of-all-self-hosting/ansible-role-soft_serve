@@ -1,14 +1,65 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
-- name: Verify Soft Serve systemd service
+- name: Verify Soft Serve
   hosts: all
   become: true
   gather_facts: false
+
+  vars:
+    soft_serve_verify_admin_key: /root/soft-serve-molecule-admin
+    soft_serve_verify_stranger_key: /root/soft-serve-molecule-stranger
+    soft_serve_verify_workdir: /root/soft-serve-molecule-work
+    soft_serve_verify_repo: molecule-probe
+    soft_serve_verify_url_probe_repo: molecule-url-probe
+    # Pushed in over SSH, cloned back out over SSH, and read a third time
+    # straight out of the bare repository on the host, so it has to survive the
+    # whole round trip unchanged.
+    soft_serve_verify_payload: molecule-soft-serve-payload-42
+
+    # `-F none` and `IdentityAgent=none` matter more than they look: without
+    # them, `ssh -i` merely *adds* a key, and an agent or a stray ~/.ssh/config
+    # can get an entirely different key offered first. Soft Serve accepts any
+    # key, so the session then authenticates as somebody else and the probe
+    # quietly measures the wrong identity.
+    soft_serve_verify_ssh_options: >-
+      -F none -o IdentityAgent=none -o IdentitiesOnly=yes
+      -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      -o BatchMode=yes -o ConnectTimeout=15
+    soft_serve_verify_admin_ssh: "ssh {{ soft_serve_verify_ssh_options }} -i {{ soft_serve_verify_admin_key }}"
+    soft_serve_verify_stranger_ssh: "ssh {{ soft_serve_verify_ssh_options }} -i {{ soft_serve_verify_stranger_key }}"
+    soft_serve_verify_endpoint: "-p {{ soft_serve_container_bind_port }} 127.0.0.1"
+    soft_serve_verify_clone_url: "ssh://127.0.0.1:{{ soft_serve_container_bind_port }}/{{ soft_serve_verify_repo }}.git"
+
   tasks:
+    # `soft_serve_version` is read straight out of defaults/main.yml, unmediated
+    # by anything this scenario could have overridden, because it is the leaf
+    # literal Renovate edits and asserting against it is what earns the role its
+    # automerged bumps. Only leaf literals may be read this way: values built out
+    # of them through Jinja cannot resolve in a namespaced copy, and
+    # scenario-tuned values must not be read from here at all, since these
+    # defaults would outrank the inventory.
+    - name: Read the Soft Serve role's defaults
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
+        name: soft_serve_role_defaults
+
+    - name: Read the values the role resolved
+      ansible.builtin.slurp:
+        src: /root/soft-serve-molecule-resolved.json
+      register: soft_serve_resolved_raw
+
+    - name: Remember the values the role resolved
+      ansible.builtin.set_fact:
+        soft_serve_resolved: "{{ soft_serve_resolved_raw.content | b64decode | from_json }}"
+
+    # Worth little on its own: the systemd unit carries `Restart=always`, so a
+    # container that crashes on every boot still reports `active`. Everything
+    # below is what actually decides whether Soft Serve works.
     - name: Wait for Soft Serve service to become active (up to 180s)
       ansible.builtin.systemd:
         name: soft-serve.service
@@ -29,7 +80,364 @@
         cmd: journalctl -xeu soft-serve.service
       changed_when: false
 
-    - name: Show Soft Serve systemd service status summary
+    - name: Wait for Soft Serve to start listening on the published port (up to 5m)
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ soft_serve_container_bind_port }}"
+        state: started
+        timeout: 300
+
+    - name: Determine which container image Soft Serve runs
+      ansible.builtin.command:
+        cmd: docker inspect --format {{ '{{.Config.Image}}' }} {{ soft_serve_resolved.identifier }}
+      register: soft_serve_container_image_in_use
+      changed_when: false
+
+    # Two claims, and the second is the one that matters for automerge: the
+    # container runs the image the role computed, and that image's tag is the
+    # very literal Renovate edits in defaults/main.yml.
+    - name: Assert Soft Serve runs the image the role configures
+      ansible.builtin.assert:
+        that:
+          - soft_serve_container_image_in_use.stdout == soft_serve_resolved.container_image
+          - soft_serve_container_image_in_use.stdout.split(':') | last == soft_serve_role_defaults.soft_serve_version
+        fail_msg: >-
+          Soft Serve runs {{ soft_serve_container_image_in_use.stdout }},
+          but the role configures {{ soft_serve_resolved.container_image }}
+          at version {{ soft_serve_role_defaults.soft_serve_version }}
+        success_msg: "Soft Serve runs {{ soft_serve_container_image_in_use.stdout }}"
+
+    - name: Ask the Soft Serve binary in the running container which version it is
+      ansible.builtin.command:
+        cmd: docker exec {{ soft_serve_resolved.identifier }} /usr/local/bin/soft --version
+      register: soft_serve_reported_version
+      changed_when: false
+
+    # Soft Serve has no version command over SSH, so this asks the binary that
+    # the running container is actually executing. It answers
+    # `soft version v0.12.2 (<revision>)` - honestly built with ldflags, `v`
+    # prefix and all, so it compares to the role's value verbatim.
+    - name: Assert Soft Serve runs the version the role pins
+      ansible.builtin.assert:
+        that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_role_defaults.soft_serve_version
+        fail_msg: >-
+          Soft Serve reports `{{ soft_serve_reported_version.stdout }}`,
+          but the role pins {{ soft_serve_role_defaults.soft_serve_version }}
+        success_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout }}, as pinned by the role"
+
+    # `argv` rather than `cmd`, because a Go template holding a space would
+    # otherwise be split into separate arguments and Docker would reject it.
+    - name: Determine the address of the Soft Serve container
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - --format
+          - "{{ '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' }}"
+          - "{{ soft_serve_resolved.identifier }}"
+      register: soft_serve_container_address
+      changed_when: false
+
+    - name: Remember the address of the Soft Serve container
+      ansible.builtin.set_fact:
+        soft_serve_container_ip: "{{ soft_serve_container_address.stdout.split() | first }}"
+
+    # The positive half of the pair below. Probing the container directly (rather
+    # than the published port) is what makes "nothing is listening on 9418" mean
+    # something: it proves the address is right and reachable, so the closed
+    # ports are closed rather than merely unrouted.
+    - name: Confirm the Soft Serve container answers on its SSH port
+      ansible.builtin.wait_for:
+        host: "{{ soft_serve_container_ip }}"
+        port: "{{ soft_serve_container_bind_port }}"
+        state: started
+        timeout: 30
+
+    # Soft Serve starts a Git daemon on 9418 and an HTTP server on 23232 unless
+    # told otherwise - an unconfigured instance logs all four listeners on boot.
+    # The role turns them off, and this is what proves the `env` file carrying
+    # SOFT_SERVE_GIT_ENABLED / SOFT_SERVE_HTTP_ENABLED reached the process. Both
+    # would otherwise be unauthenticated read access to every repository.
+    - name: Confirm Soft Serve serves neither the Git daemon nor HTTP
+      ansible.builtin.wait_for:
+        host: "{{ soft_serve_container_ip }}"
+        port: "{{ item }}"
+        state: stopped
+        timeout: 15
+      loop:
+        - 9418
+        - 23232
+
+    - name: Ensure a working directory for the Soft Serve Git round trip exists
+      ansible.builtin.file:
+        path: "{{ soft_serve_verify_workdir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Create a repository to push to Soft Serve  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git init -q -b main {{ soft_serve_verify_repo }}
+        chdir: "{{ soft_serve_verify_workdir }}"
+        creates: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}/.git"
+
+    - name: Write the payload that has to survive the round trip
+      ansible.builtin.copy:
+        content: "{{ soft_serve_verify_payload }}"
+        dest: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}/payload.txt"
+        mode: "0600"
+
+    - name: Stage the payload  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git add payload.txt
+        chdir: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}"
+      register: soft_serve_stage
+      changed_when: soft_serve_stage.rc == 0
+
+    - name: Commit the payload  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: >-
+          git -c user.email=molecule@example.com -c user.name=Molecule
+          commit -q -m "Molecule payload"
+        chdir: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}"
+      register: soft_serve_commit
+      changed_when: soft_serve_commit.rc == 0
+
+    # The probe that crosses every boundary at once: a real SSH transport, a
+    # real Git wire protocol, the key the role wrote into `env` as the initial
+    # administrator, Soft Serve's implicit repository creation, and a write that
+    # has to land inside the bind mount the role set up.
+    - name: Push the repository into Soft Serve over SSH  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git push -q {{ soft_serve_verify_clone_url }} HEAD:refs/heads/main
+        chdir: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}"
+      register: soft_serve_push
+      changed_when: soft_serve_push.rc == 0
+      environment:
+        GIT_SSH_COMMAND: "{{ soft_serve_verify_admin_ssh }}"
+
+    - name: Clone the repository back out of Soft Serve over SSH  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git clone -q {{ soft_serve_verify_clone_url }} cloned
+        chdir: "{{ soft_serve_verify_workdir }}"
+        creates: "{{ soft_serve_verify_workdir }}/cloned/.git"
+      environment:
+        GIT_SSH_COMMAND: "{{ soft_serve_verify_admin_ssh }}"
+
+    - name: Read back what Soft Serve returned over SSH
+      ansible.builtin.slurp:
+        src: "{{ soft_serve_verify_workdir }}/cloned/payload.txt"
+      register: soft_serve_cloned_payload
+
+    - name: Check for the bare repository under the role's data path
+      ansible.builtin.stat:
+        path: "{{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
+      register: soft_serve_bare_repository
+
+    # Reading the blob out of the bare repository on the host is what turns "the
+    # clone worked" into "the role's data path is where the repository lives",
+    # and so also proves the bind mount into the container's /soft-serve.
+    - name: Read the payload straight out of the bare repository on the host  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: >-
+          git -c safe.directory=*
+          --git-dir={{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git
+          cat-file blob refs/heads/main:payload.txt
+      register: soft_serve_payload_on_host
+      changed_when: false
+      # So that a repository which never reached the host - the shape a dropped
+      # bind mount takes, since the image declares /soft-serve as a volume and
+      # Docker would silently give it an anonymous one - is reported by the
+      # assertion below rather than as a bare `git` failure.
+      failed_when: false
+
+    - name: Assert the Git round trip landed in the role's data path
+      ansible.builtin.assert:
+        that:
+          - soft_serve_cloned_payload.content | b64decode == soft_serve_verify_payload
+          - soft_serve_bare_repository.stat.isdir | default(false)
+          - soft_serve_payload_on_host.stdout == soft_serve_verify_payload
+        fail_msg: >-
+          The Git round trip did not preserve the payload in
+          {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git
+        success_msg: >-
+          A repository pushed over SSH is stored at
+          {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git
+          and clones back intact
+
+    - name: Ask Soft Serve to create a repository, so it prints its clone URL
+      ansible.builtin.command:
+        cmd: >-
+          {{ soft_serve_verify_admin_ssh }} {{ soft_serve_verify_endpoint }}
+          repo create {{ soft_serve_verify_url_probe_repo }}
+      register: soft_serve_repo_create
+      changed_when: soft_serve_repo_create.rc == 0
+
+    # Soft Serve prints exactly one clone URL, built from SOFT_SERVE_SSH_PUBLIC_URL.
+    # Without it, it advertises its own `ssh://localhost:23231`, which is neither
+    # this scenario's hostname nor its port, so this cannot pass by accident.
+    - name: Assert Soft Serve advertises the clone URL the role configured
+      ansible.builtin.assert:
+        that: soft_serve_repo_create.stdout | trim == soft_serve_resolved.ssh_public_url + '/' + soft_serve_verify_url_probe_repo + '.git'
+        fail_msg: >-
+          Soft Serve advertises `{{ soft_serve_repo_create.stdout | trim }}`,
+          but the role configured {{ soft_serve_resolved.ssh_public_url }}
+        success_msg: "Soft Serve advertises clone URLs under {{ soft_serve_resolved.ssh_public_url }}"
+
+    - name: Ask Soft Serve for its repositories as the administrator
+      ansible.builtin.command:
+        cmd: "{{ soft_serve_verify_admin_ssh }} {{ soft_serve_verify_endpoint }} repo list"
+      register: soft_serve_repo_list_admin
+      changed_when: false
+
+    - name: Ask Soft Serve for its repositories as a key it has never seen
+      ansible.builtin.command:
+        cmd: "{{ soft_serve_verify_stranger_ssh }} {{ soft_serve_verify_endpoint }} repo list"
+      register: soft_serve_repo_list_stranger
+      changed_when: false
+
+    # A pair, and the pairing is the point: the same command, the same server,
+    # differing only in which key signed the session. Soft Serve does not refuse
+    # `repo list` outright - it filters it down to what the caller may see - so
+    # an empty answer next to a non-empty one is exactly the shape of anonymous
+    # access being closed. Under Soft Serve's own seeded `read-only` default,
+    # the stranger would see the same repositories the administrator does.
+    - name: Assert an unknown key sees none of the repositories the administrator sees
+      ansible.builtin.assert:
+        that:
+          - soft_serve_verify_repo in soft_serve_repo_list_admin.stdout_lines
+          - soft_serve_repo_list_stranger.stdout | trim | length == 0
+        fail_msg: >-
+          An unknown key was shown {{ soft_serve_repo_list_stranger.stdout_lines }},
+          while the administrator was shown {{ soft_serve_repo_list_admin.stdout_lines }}
+        success_msg: "An unknown key is shown no repositories at all"
+
+    - name: Attempt to clone from Soft Serve with a key it has never seen  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git clone -q {{ soft_serve_verify_clone_url }} stranger-clone
+        chdir: "{{ soft_serve_verify_workdir }}"
+      register: soft_serve_stranger_clone
+      changed_when: false
+      failed_when: soft_serve_stranger_clone.rc == 0
+      environment:
+        GIT_SSH_COMMAND: "{{ soft_serve_verify_stranger_ssh }}"
+
+    - name: Attempt to push to Soft Serve with a key it has never seen  # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: git push -q {{ soft_serve_verify_clone_url }} HEAD:refs/heads/stranger
+        chdir: "{{ soft_serve_verify_workdir }}/{{ soft_serve_verify_repo }}"
+      register: soft_serve_stranger_push
+      changed_when: false
+      failed_when: soft_serve_stranger_push.rc == 0
+      environment:
+        GIT_SSH_COMMAND: "{{ soft_serve_verify_stranger_ssh }}"
+
+    # Without this, "the round trip works" could just mean "the SSH listener
+    # serves everyone". Read and write are checked separately because Soft Serve
+    # grades them separately: its seeded default refuses the push while happily
+    # allowing the clone.
+    - name: Assert an unknown key can neither read nor write
+      ansible.builtin.assert:
+        that:
+          - soft_serve_stranger_clone.rc != 0
+          - soft_serve_stranger_push.rc != 0
+        fail_msg: "Soft Serve served a key it was never told about"
+        success_msg: "Soft Serve refuses both a clone and a push from a key it was never told about"
+
+    # Neither `BatchMode=yes` nor `NumberOfPasswordPrompts=0` may appear here,
+    # even though every other probe in this file carries the former: both make
+    # ssh decline to attempt keyboard-interactive authentication at all, so the
+    # probe fails client-side and passes this negative control against a server
+    # that would have let it straight in. Soft Serve's keyless challenge asks
+    # nothing, so there is no prompt to guard against - and the command module
+    # gives ssh no stdin anyway.
+    - name: Attempt to reach Soft Serve without presenting a key at all
+      ansible.builtin.command:
+        cmd: >-
+          ssh -F none -o IdentityAgent=none -o IdentitiesOnly=yes
+          -o PreferredAuthentications=keyboard-interactive
+          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          -o ConnectTimeout=15
+          {{ soft_serve_verify_endpoint }} repo list
+      register: soft_serve_keyless
+      changed_when: false
+      failed_when: soft_serve_keyless.rc == 0
+
+    # Soft Serve's seeded `allow_keyless = true` accepts a connection carrying no
+    # key whatsoever - independently of anonymous access, which only decides what
+    # such a session may then see - and on an unconfigured instance that is a
+    # listing of every repository. Refusing the connection outright is therefore
+    # SOFT_SERVE_ALLOW_KEYLESS having reached the process, and nothing else.
+    - name: Assert Soft Serve refuses connections that present no key
+      ansible.builtin.assert:
+        that: soft_serve_keyless.rc != 0
+        fail_msg: "Soft Serve served a connection that presented no key at all"
+        success_msg: "Soft Serve refuses connections that present no key"
+
+    - name: Read the administrator public key the role installed
+      ansible.builtin.slurp:
+        src: /root/soft-serve-molecule-admin.pub
+      register: soft_serve_admin_public_key
+
+    # Soft Serve stores authorized keys without their trailing comment, so the
+    # comparison is against the algorithm and the key material only.
+    - name: Remember the administrator public key the role installed
+      ansible.builtin.set_fact:
+        soft_serve_admin_public_key_body: "{{ (soft_serve_admin_public_key.content | b64decode).split()[0:2] | join(' ') }}"
+
+    - name: Read Soft Serve's records back out of its database
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json
+            import sqlite3
+            import sys
+
+            connection = sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True)
+            print(json.dumps({
+                "migrations": connection.execute("select count(*) from migrations").fetchone()[0],
+                "admins": [row[0] for row in connection.execute("select username from users where admin = 1 order by username")],
+                "repos": [row[0] for row in connection.execute("select name from repos order by name")],
+                "public_keys": [row[0] for row in connection.execute("select public_key from public_keys order by id")],
+            }))
+          - "{{ soft_serve_resolved.data_path }}/soft-serve.db"
+      register: soft_serve_database_query
+      changed_when: false
+
+    - name: Remember what Soft Serve's database holds
+      ansible.builtin.set_fact:
+        soft_serve_database: "{{ soft_serve_database_query.stdout | from_json }}"
+
+    # The SSH surface only reports what Soft Serve believes. This reads the
+    # SQLite database itself, off the role's own data path, and finds the
+    # repository that was pushed, an administrator, and the very public key the
+    # role rendered into `env` - which is what turns "a key worked" into "this
+    # key is the one the role installed". A non-zero migration count additionally
+    # means Soft Serve ran its schema migrations against this file rather than
+    # finding one somewhere else.
+    - name: Assert the role's data path is where Soft Serve's records live
+      ansible.builtin.assert:
+        that:
+          - soft_serve_database.migrations | int > 0
+          - soft_serve_database.admins | length > 0
+          - soft_serve_verify_repo in soft_serve_database.repos
+          - soft_serve_admin_public_key_body in soft_serve_database.public_keys
+        fail_msg: >-
+          {{ soft_serve_resolved.data_path }}/soft-serve.db does not hold Soft Serve's records:
+          {{ soft_serve_database | default('unreadable') }}
+        success_msg: >-
+          {{ soft_serve_resolved.data_path }}/soft-serve.db has run
+          {{ soft_serve_database.migrations }} migrations and holds
+          repository {{ soft_serve_verify_repo }} and administrator
+          {{ soft_serve_database.admins | join(', ') }}
+
+    - name: Show what was verified
       ansible.builtin.debug:
         msg:
           - "Soft Serve systemd: {{ soft_serve_service.status.ActiveState }}"
+          - "Soft Serve version: {{ soft_serve_reported_version.stdout }}"
+          - "Soft Serve image: {{ soft_serve_container_image_in_use.stdout }}"
+          - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
+          - "Git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
+          - "Soft Serve database: {{ soft_serve_database.migrations }} migrations, repositories {{ soft_serve_database.repos | join(', ') }}"

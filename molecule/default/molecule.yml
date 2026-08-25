@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -34,9 +35,27 @@ provisioner:
         # Variables for Soft Serve
         soft_serve_uid: 1000
         soft_serve_gid: 1000
-        soft_serve_hostname: localhost
-        soft_serve_container_bind_port: 8080
-        soft_serve_initial_admin_key: secret
+
+        # Deliberately not `localhost`, and deliberately not Soft Serve's own
+        # port of 23231. Soft Serve advertises `ssh://localhost:23231` when it
+        # is not told otherwise, so a clone URL carrying this hostname and this
+        # port can only have come from the `env` file the role rendered.
+        soft_serve_hostname: soft-serve.molecule.local
+        soft_serve_container_bind_port: 8022
+
+        # Soft Serve seeds its database with `anon_access = read-only` and
+        # `allow_keyless = true`, so an instance that never saw this role's
+        # `env` file lets an unknown key - or no key at all - list and clone
+        # every repository. Closing both is what lets verify.yml tell "the SSH
+        # listener authorizes people" apart from "the SSH listener answers".
+        soft_serve_anon_access: no-access
+        soft_serve_allow_keyless: false
+
+        # `soft_serve_initial_admin_key` is deliberately absent here: converge.yml
+        # sets it from a key pair generated in prepare.yml, so that verify.yml
+        # holds the matching private key. A literal here could only be a public
+        # key nobody has the other half of - which is what this scenario used to
+        # carry, leaving the instance under test with no administrator at all.
   env:
     # Workaround for https://github.com/ansible/molecule/issues/4391
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles

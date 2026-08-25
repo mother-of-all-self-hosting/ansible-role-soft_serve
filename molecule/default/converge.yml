@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -9,6 +10,18 @@
   become: true
   gather_facts: true
   tasks:
+    - name: Read the public key that will administrate Soft Serve
+      ansible.builtin.slurp:
+        src: /root/soft-serve-molecule-admin.pub
+      register: soft_serve_molecule_admin_public_key
+
+    # A fact rather than a group_vars entry, because the key material only comes
+    # into existence in prepare.yml. Facts outrank inventory variables, so this
+    # is what the role renders into `env`, and verify.yml holds the private half.
+    - name: Make that public key Soft Serve's initial administrator
+      ansible.builtin.set_fact:
+        soft_serve_initial_admin_key: "{{ soft_serve_molecule_admin_public_key.content | b64decode | trim }}"
+
     - name: Include roles for Soft Serve Molecule tests
       ansible.builtin.include_role:
         name: "{{ role_name }}"
@@ -19,6 +32,24 @@
         - "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
       loop_control:
         loop_var: role_name
+
+    # verify.yml runs as a separate playbook, where the role's variables are no
+    # longer in scope. Reading defaults/main.yml there works for leaf literals
+    # but not for the values built out of them through Jinja, so hand those over
+    # already resolved - by the role's own variable precedence, which is exactly
+    # what the systemd unit and the `env` file were rendered from.
+    - name: Record the values the role resolved, for verify.yml
+      ansible.builtin.copy:
+        content: "{{ soft_serve_molecule_resolved | to_nice_json }}"
+        dest: /root/soft-serve-molecule-resolved.json
+        mode: "0600"
+      vars:
+        soft_serve_molecule_resolved:
+          identifier: "{{ soft_serve_identifier }}"
+          container_image: "{{ soft_serve_container_image }}"
+          base_path: "{{ soft_serve_base_path }}"
+          data_path: "{{ soft_serve_data_path }}"
+          ssh_public_url: "{{ soft_serve_ssh_public_url }}"
 
 - name: Ensure Soft Serve service is started
   hosts: all
