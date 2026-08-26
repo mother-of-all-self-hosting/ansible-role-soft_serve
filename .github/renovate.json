@@ -8,7 +8,7 @@
     "`versioning=semver` on the annotation in defaults/main.yml is what keeps the registry noise out. `charmcli/soft-serve` publishes 350 tags, and strict semver leaves only the real vX.Y.Z releases: the `-amd64`, `-arm64` and `-armv7` per-architecture tags parse as prereleases and are skipped, while `latest`, `v0.12` and the `.sig` entries are not versions at all. The bare, unsuffixed tag this role uses exists for every release, so nothing real is filtered out, and the annotation sits on the leaf literal rather than on `soft_serve_container_image_tag`, which is derived from it."
   ],
   "extends": [
-    "github>mother-of-all-self-hosting/renovate-config#v1.0.0",
-    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.0.0"
+    "github>mother-of-all-self-hosting/renovate-config#v1.1.0",
+    "github>mother-of-all-self-hosting/renovate-config//patch-automerge#v1.1.0"
   ]
 }
