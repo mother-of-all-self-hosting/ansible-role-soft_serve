@@ -432,12 +432,12 @@
           repository {{ soft_serve_verify_repo }} and administrator
           {{ soft_serve_database.admins | join(', ') }}
 
-    - name: Show what was verified
+    - name: Show the Soft Serve verification summary
       ansible.builtin.debug:
         msg:
           - "Soft Serve systemd: {{ soft_serve_service.status.ActiveState }}"
           - "Soft Serve version: {{ soft_serve_reported_version.stdout }}"
           - "Soft Serve image: {{ soft_serve_container_image_in_use.stdout }}"
           - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
-          - "Git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
+          - "Soft Serve git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
           - "Soft Serve database: {{ soft_serve_database.migrations }} migrations, repositories {{ soft_serve_database.repos | join(', ') }}"
