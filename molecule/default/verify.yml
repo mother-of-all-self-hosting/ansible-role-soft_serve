@@ -113,10 +113,6 @@
       register: soft_serve_reported_version
       changed_when: false
 
-    # Soft Serve has no version command over SSH, so this asks the binary that
-    # the running container is actually executing. It answers
-    # `soft version v0.12.2 (<revision>)` - honestly built with ldflags, `v`
-    # prefix and all, so it compares to the role's value verbatim.
     - name: Assert Soft Serve runs the version the role pins
       ansible.builtin.assert:
         that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_role_defaults.soft_serve_version
