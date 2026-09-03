@@ -113,13 +113,11 @@
       register: soft_serve_reported_version
       changed_when: false
 
-    - name: Assert Soft Serve runs the version the role pins
+    - name: Assert the running Soft Serve is the version this role installs
       ansible.builtin.assert:
         that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_role_defaults.soft_serve_version
-        fail_msg: >-
-          Soft Serve reports `{{ soft_serve_reported_version.stdout }}`,
-          but the role pins {{ soft_serve_role_defaults.soft_serve_version }}
-        success_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout }}, as pinned by the role"
+        fail_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout | default('none') }}, expected {{ soft_serve_role_defaults.soft_serve_version }}"
+        success_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout }}"
 
     # `argv` rather than `cmd`, because a Go template holding a space would
     # otherwise be split into separate arguments and Docker would reject it.
