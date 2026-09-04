@@ -36,17 +36,13 @@
     soft_serve_verify_clone_url: "ssh://127.0.0.1:{{ soft_serve_container_bind_port }}/{{ soft_serve_verify_repo }}.git"
 
   tasks:
-    # `soft_serve_version` is read straight out of defaults/main.yml, unmediated
-    # by anything this scenario could have overridden, because it is the leaf
-    # literal Renovate edits and asserting against it is what earns the role its
-    # automerged bumps. Only leaf literals may be read this way: values built out
-    # of them through Jinja cannot resolve in a namespaced copy, and
-    # scenario-tuned values must not be read from here at all, since these
-    # defaults would outrank the inventory.
-    - name: Read the Soft Serve role's defaults
+    # The role is not included in this playbook, so its defaults are not in
+    # scope. Reading defaults/main.yml directly ties the version assertion
+    # below.
+    - name: Load the role defaults
       ansible.builtin.include_vars:
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
-        name: soft_serve_role_defaults
+        name: soft_serve_defaults
 
     - name: Read the values the role resolved
       ansible.builtin.slurp:
