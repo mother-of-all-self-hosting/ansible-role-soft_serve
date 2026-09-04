@@ -92,16 +92,13 @@
     # Two claims, and the second is the one that matters for automerge: the
     # container runs the image the role computed, and that image's tag is the
     # very literal Renovate edits in defaults/main.yml.
-    - name: Assert Soft Serve runs the image the role configures
+    - name: Assert the running Soft Serve is the version this role installs
       ansible.builtin.assert:
         that:
           - soft_serve_container_image_in_use.stdout == soft_serve_resolved.container_image
-          - soft_serve_container_image_in_use.stdout.split(':') | last == soft_serve_role_defaults.soft_serve_version
-        fail_msg: >-
-          Soft Serve runs {{ soft_serve_container_image_in_use.stdout }},
-          but the role configures {{ soft_serve_resolved.container_image }}
-          at version {{ soft_serve_role_defaults.soft_serve_version }}
-        success_msg: "Soft Serve runs {{ soft_serve_container_image_in_use.stdout }}"
+          - soft_serve_container_image_in_use.stdout.split(':') | last == soft_serve_defaults.soft_serve_version
+        fail_msg: "Soft Serve reports {{ soft_serve_container_image_in_use.stdout | default('none') }}, expected {{ soft_serve_resolved.container_image }} at version {{ soft_serve_defaults.soft_serve_version }}"
+        success_msg: "Soft Serve reports {{ soft_serve_container_image_in_use.stdout }}"
 
     - name: Ask the Soft Serve binary in the running container which version it is
       ansible.builtin.command:
@@ -111,8 +108,8 @@
 
     - name: Assert the running Soft Serve is the version this role installs
       ansible.builtin.assert:
-        that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_role_defaults.soft_serve_version
-        fail_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout | default('none') }}, expected {{ soft_serve_role_defaults.soft_serve_version }}"
+        that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_defaults.soft_serve_version
+        fail_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout | default('none') }}, expected {{ soft_serve_defaults.soft_serve_version }}"
         success_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout }}"
 
     # `argv` rather than `cmd`, because a Go template holding a space would
