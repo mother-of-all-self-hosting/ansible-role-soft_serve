@@ -100,7 +100,7 @@
         fail_msg: "Soft Serve reports {{ soft_serve_container_image_in_use.stdout | default('none') }}, expected {{ soft_serve_resolved.container_image }} at version {{ soft_serve_defaults.soft_serve_version }}"
         success_msg: "Soft Serve reports {{ soft_serve_container_image_in_use.stdout }}"
 
-    - name: Ask the Soft Serve binary in the running container which version it is
+    - name: Query the version of the running Soft Serve
       ansible.builtin.command:
         cmd: docker exec {{ soft_serve_resolved.identifier }} /usr/local/bin/soft --version
       register: soft_serve_reported_version
