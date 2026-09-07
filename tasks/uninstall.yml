@@ -13,7 +13,7 @@
   when: soft_serve_service_stat.stat.exists | bool
   block:
     - name: Ensure Soft Serve systemd service is stopped
-      ansible.builtin.systemd:
+      ansible.builtin.systemd_service:
         name: "{{ soft_serve_identifier }}"
         state: stopped
         enabled: false
