@@ -106,14 +106,14 @@
     - name: Query the version of the running Soft Serve
       ansible.builtin.command:
         cmd: docker exec {{ soft_serve_resolved.identifier }} /usr/local/bin/soft --version
-      register: soft_serve_reported_version
+      register: soft_serve_version_reported
       changed_when: false
 
     - name: Assert the running Soft Serve is the version this role installs
       ansible.builtin.assert:
-        that: soft_serve_reported_version.stdout.split() | length > 2 and soft_serve_reported_version.stdout.split()[2] == soft_serve_defaults.soft_serve_version
-        fail_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout | default('none') }}, expected {{ soft_serve_defaults.soft_serve_version }}"
-        success_msg: "Soft Serve reports {{ soft_serve_reported_version.stdout }}"
+        that: soft_serve_version_reported.stdout.split() | length > 2 and soft_serve_version_reported.stdout.split()[2] == soft_serve_defaults.soft_serve_version
+        fail_msg: "Soft Serve reports {{ soft_serve_version_reported.stdout | default('none') }}, expected {{ soft_serve_defaults.soft_serve_version }}"
+        success_msg: "Soft Serve reports {{ soft_serve_version_reported.stdout }}"
 
     # `argv` rather than `cmd`, because a Go template holding a space would
     # otherwise be split into separate arguments and Docker would reject it.
@@ -426,7 +426,7 @@
       ansible.builtin.debug:
         msg:
           - "Soft Serve systemd: {{ soft_serve_service.status.ActiveState }}"
-          - "Soft Serve version: {{ soft_serve_reported_version.stdout }}"
+          - "Soft Serve version: {{ soft_serve_version_reported.stdout }}"
           - "Soft Serve image: {{ soft_serve_container_image_in_use.stdout }}"
           - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
           - "Soft Serve git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
