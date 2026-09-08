@@ -76,7 +76,7 @@
     - name: Retrieve the Soft Serve systemd service log for debugging
       when: soft_serve_debug_service_enabled | bool
       ansible.builtin.command:
-        cmd: journalctl -xeu soft-serve.service
+        cmd: journalctl --no-pager --output=cat --unit=soft-serve.service
       changed_when: false
 
     - name: Wait for Soft Serve to start listening on the published port (up to 5m)
