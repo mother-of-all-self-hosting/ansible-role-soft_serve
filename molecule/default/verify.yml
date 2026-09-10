@@ -36,6 +36,8 @@
     soft_serve_verify_clone_url: "ssh://127.0.0.1:{{ soft_serve_container_bind_port }}/{{ soft_serve_verify_repo }}.git"
 
   tasks:
+    - name: Verify that Soft Serve works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -431,3 +433,19 @@
           - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
           - "Soft Serve git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
           - "Soft Serve database: {{ soft_serve_database.migrations }} migrations, repositories {{ soft_serve_database.repos | join(', ') }}"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the Soft Serve systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=soft-serve.service
+          register: soft_serve_service_log
+          changed_when: false
+
+        - name: Show the Soft Serve systemd service log
+          ansible.builtin.debug:
+            var: soft_serve_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "Soft Serve verification failed. The systemd service log is printed above."
