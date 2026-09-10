@@ -44,15 +44,6 @@
         file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
         name: soft_serve_defaults
 
-    - name: Read the values the role resolved
-      ansible.builtin.slurp:
-        src: /root/soft-serve-molecule-resolved.json
-      register: soft_serve_resolved_raw
-
-    - name: Remember the values the role resolved
-      ansible.builtin.set_fact:
-        soft_serve_resolved: "{{ soft_serve_resolved_raw.content | b64decode | from_json }}"
-
     - name: Wait for the Soft Serve systemd service to become active (up to 180s)
       ansible.builtin.systemd_service:
         name: soft-serve.service
@@ -85,6 +76,15 @@
         port: "{{ soft_serve_container_bind_port }}"
         state: started
         timeout: 300
+
+    - name: Read the values the role resolved
+      ansible.builtin.slurp:
+        src: /root/soft-serve-molecule-resolved.json
+      register: soft_serve_resolved_raw
+
+    - name: Remember the values the role resolved
+      ansible.builtin.set_fact:
+        soft_serve_resolved: "{{ soft_serve_resolved_raw.content | b64decode | from_json }}"
 
     - name: Determine which container image Soft Serve runs
       ansible.builtin.command:
