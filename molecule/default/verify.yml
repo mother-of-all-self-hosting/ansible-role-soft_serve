@@ -35,6 +35,9 @@
     soft_serve_verify_endpoint: "-p {{ soft_serve_container_bind_port }} 127.0.0.1"
     soft_serve_verify_clone_url: "ssh://127.0.0.1:{{ soft_serve_container_bind_port }}/{{ soft_serve_verify_repo }}.git"
 
+    soft_serve_verify_units:
+      - soft-serve.service
+
   tasks:
     - name: Verify that Soft Serve works
       block:
@@ -46,13 +49,14 @@
             file: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/defaults/main.yml"
             name: soft_serve_defaults
 
-        - name: Wait for the Soft Serve systemd service to become active (up to 180s)
+        - name: Wait for the Soft Serve systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: soft-serve.service
-          register: soft_serve_service
-          until: soft_serve_service.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: soft_serve_services
+          until: soft_serve_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ soft_serve_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
@@ -60,17 +64,20 @@
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert the Soft Serve systemd service is active
+        - name: Assert the Soft Serve systemd services are active
           ansible.builtin.assert:
-            that: soft_serve_service.status.ActiveState == 'active'
-            fail_msg: "soft-serve.service is not active ({{ soft_serve_service.status.ActiveState }})"
-            success_msg: "soft-serve.service is active"
+            that: soft_serve_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
+            fail_msg: >-
+              Not every service is active:
+              {{ dict(soft_serve_verify_units | zip(soft_serve_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
 
-        - name: Retrieve the Soft Serve systemd service log for debugging
+        - name: Retrieve the Soft Serve systemd services log for debugging
           when: soft_serve_debug_service_enabled | bool
           ansible.builtin.command:
-            cmd: journalctl --no-pager --output=cat --unit=soft-serve.service
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
           changed_when: false
+          loop: "{{ soft_serve_verify_units }}"
 
         - name: Wait for Soft Serve to start listening on the published port (up to 5m)
           ansible.builtin.wait_for:
@@ -427,7 +434,7 @@
         - name: Show the Soft Serve verification summary
           ansible.builtin.debug:
             msg:
-              - "Soft Serve systemd: {{ soft_serve_service.status.ActiveState }}"
+              - "Soft Serve systemd: {% for unit, state in soft_serve_verify_units | zip(soft_serve_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "Soft Serve version: {{ soft_serve_version_reported.stdout }}"
               - "Soft Serve image: {{ soft_serve_container_image_in_use.stdout }}"
               - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
