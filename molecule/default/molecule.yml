@@ -31,6 +31,7 @@ provisioner:
       all:
         # Helper variables
         soft_serve_debug_service_enabled: false
+        soft_serve_restarts_check_enabled: true
 
         # Variables for Soft Serve
         soft_serve_uid: 1000
