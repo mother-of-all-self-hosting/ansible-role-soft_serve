@@ -33,7 +33,10 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
       {% for arg in soft_serve_container_extra_arguments %}
       {{ arg }} \
       {% endfor %}
-      {{ soft_serve_container_image }}
+      {{ soft_serve_container_image }} \
+      {% for arg in soft_serve_process_extra_arguments %}
+      {{ arg }} \
+      {% endfor %}
 
 {% for network in soft_serve_container_additional_networks %}
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ soft_serve_identifier }}
