@@ -10,6 +10,7 @@ SPDX-FileCopyrightText: 2022 Julian Foad
 SPDX-FileCopyrightText: 2022 Warren Bailey
 SPDX-FileCopyrightText: 2023 Antonis Christofides
 SPDX-FileCopyrightText: 2023 Felix Stupp
+SPDX-FileCopyrightText: 2023 Nikita Chernyi
 SPDX-FileCopyrightText: 2023 Pierre 'McFly' Marty
 SPDX-FileCopyrightText: 2024-2026 Suguru Hirahara
 
@@ -18,11 +19,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Setting up Soft Serve
 
-This is an [Ansible](https://www.ansible.com/) role which installs [Soft Serve](https://soft-servebudget.org) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
+This is an [Ansible](https://www.ansible.com/) role which installs [Soft Serve](https://github.com/charmbracelet/soft-serve) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
-Soft Serve is a local-first personal finance tool.
+Soft Serve is a self-hostable [Git](https://git-scm.com/) server for the command line.
 
-See the project's [documentation](https://soft-servebudget.org/docs/) to learn what Soft Serve does and why it might be useful to you.
+See the project's [documentation](https://github.com/charmbracelet/soft-serve/blob/main/README.md) to learn what Soft Serve does and why it might be useful to you.
 
 ## Adjusting the playbook configuration
 
@@ -58,6 +59,30 @@ After adjusting the hostname, make sure to adjust your DNS records to point the 
 
 **Note**: hosting Soft Serve under a subpath (by configuring the `soft_serve_path_prefix` variable) does not seem to be possible due to Soft Serve's technical limitations.
 
+### Configure SSH port
+
+It is also necessary to specify SSH port by adding the following configuration to your `vars.yml` file:
+
+```yaml
+soft_serve_container_bind_port: 2222
+```
+
+>[!NOTE]
+> For Git servers the usual Git-over-SSH port is 22.
+
+### Set initial administrator's key
+
+You also need to set an initial administrator's key by adding the following configuration to your `vars.yml` file:
+
+```yaml
+soft_serve_initial_admin_key: YOUR_PUBLIC_SSH_KEY_HERE
+```
+
+Replace `YOUR_PUBLIC_SSH_KEY_HERE` with your own value.
+
+>[!WARNING]
+> This key will be able to authenticate with ANY user until Soft Serve is configured.
+
 ### Extending the configuration
 
 There are some additional things you may wish to configure about the service.
@@ -78,7 +103,11 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 ## Usage
 
-After running the command for installation, Soft Serve becomes available at the specified hostname like `https://example.com`. To use it, open the URL on the browser and create an account.
+After running the command for installation, Soft Serve becomes available at the specified hostname like `https://example.com`.
+
+You can `ssh example@example.com -p 2222` with the SSH key defined in `soft_serve_initial_admin_key` to see its [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) and follow the instructions to configure Soft Serve further.
+
+Note that you have to [finish the configuration yourself](https://github.com/charmbracelet/soft-serve#configuration), otherwise any user with `soft_serve_initial_admin_key` will work as an admin.
 
 ## Troubleshooting
 
