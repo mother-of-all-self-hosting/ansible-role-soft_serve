@@ -83,6 +83,23 @@ Replace `YOUR_PUBLIC_SSH_KEY_HERE` with your own value.
 >[!WARNING]
 > This key will be able to authenticate with ANY user until Soft Serve is configured.
 
+### Adjusting clone URLs (optional)
+
+Soft Serve advertises a single clone URL to its users: it prints it when a repository is created (`ssh -p … <hostname> repo create …`) and builds the clone command shown in its SSH interface out of it. That URL is `soft_serve_ssh_public_url`, and you need to override it when the SSH port is reached at some other address than the one the container publishes.
+
+### Disabling anonymous access for a private Git server (optional)
+
+Soft Serve ships with anonymous access set to `read-only` and with keyless connections allowed, and it stores both in its own database rather than in configuration. This role leaves those stored values alone by default, which means that **anyone who can reach the SSH port can list and clone every repository that has not been made private**.
+
+To avoid it for a private Git server, add the following configuration to your `vars.yml` file:
+
+```yaml
+soft_serve_anon_access: no-access
+soft_serve_allow_keyless: false
+```
+
+Note that neither affects your own access: the key in `soft_serve_initial_admin_key` is an administrator regardless.
+
 ### Extending the configuration
 
 There are some additional things you may wish to configure about the service.
@@ -103,7 +120,7 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 ## Usage
 
-After running the command for installation, Soft Serve becomes available at the specified hostname like `https://example.com`.
+After running the command for installation, Soft Serve becomes available at the specified hostname.
 
 You can `ssh example@example.com -p 2222` with the SSH key defined in `soft_serve_initial_admin_key` to see its [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) and follow the instructions to configure Soft Serve further.
 
