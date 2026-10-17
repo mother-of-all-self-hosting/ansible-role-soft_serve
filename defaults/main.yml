@@ -34,7 +34,7 @@ soft_serve_hostname: ""
 #
 # Override this if the SSH port is reached at some other address than the one
 # the container publishes - through a load balancer or a port forwarding, say.
-soft_serve_ssh_public_url: "ssh://{{ soft_serve_hostname }}:{{ soft_serve_container_bind_port }}"
+soft_serve_environment_variables_soft_serve_ssh_public_url: "ssh://{{ soft_serve_hostname }}:{{ soft_serve_container_bind_port }}"
 
 soft_serve_container_image: "{{ soft_serve_container_image_registry_prefix }}charmcli/soft-serve:{{ soft_serve_container_image_tag }}"
 soft_serve_container_image_tag: "{{ soft_serve_version }}"
@@ -112,10 +112,10 @@ soft_serve_container_cleanup_command: |
   echo "Failed to remove stale container {{ soft_serve_identifier }} after {{ soft_serve_container_cleanup_timeout_seconds }} attempts" >&2;
   exit 1
 
-soft_serve_initial_admin_key: ""
+soft_serve_environment_variables_soft_serve_initial_admin_keys: ""
 
 # Controls the access level granted to users Soft Serve does not know: an SSH
-# key it has never seen, or - when `soft_serve_allow_keyless` permits it - a
+# key it has never seen, or - when `soft_serve_environment_variables_soft_serve_allow_keyless` permits it - a
 # connection carrying no key at all.
 #
 # Soft Serve keeps this in its own database, seeded to `read-only` when the
@@ -128,17 +128,17 @@ soft_serve_initial_admin_key: ""
 # A non-empty value is not a seed: Soft Serve consults it on every access check
 # for as long as it is set, which also means the `settings anon-access` command
 # stops having any effect while it is.
-soft_serve_anon_access: ""
+soft_serve_environment_variables_soft_serve_anon_access: ""
 
 # Controls whether Soft Serve accepts SSH connections that present no public key
-# at all. Such connections get whatever `soft_serve_anon_access` grants.
+# at all. Such connections get whatever `soft_serve_environment_variables_soft_serve_anon_access` grants.
 #
-# As with `soft_serve_anon_access`, Soft Serve keeps this in its database, seeded
+# As with `soft_serve_environment_variables_soft_serve_anon_access`, Soft Serve keeps this in its database, seeded
 # to `true`, and an empty value here leaves that stored value alone. Set it to
 # `false` to require a key, or to `true` to enforce keyless access; either way
 # the value then overrides the database for as long as it is set, and the
 # `settings allow-keyless` command stops having any effect.
-soft_serve_allow_keyless: ""
+soft_serve_environment_variables_soft_serve_allow_keyless: ""
 
 # Specify the timezone
 soft_serve_environment_variables_tz: UTC

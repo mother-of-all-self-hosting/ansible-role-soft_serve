@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023 Nikita Chernyi
 # SPDX-FileCopyrightText: 2026 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,6 +12,10 @@
       Please change your configuration to rename the variable (`{{ item.old }}` -> `{{ item.new }}`).
   when: "lookup('ansible.builtin.varnames', ('^' + item.old + '$'), wantlist=True) | length > 0"
   with_items:
+    - { "old": "soft_serve_ssh_public_url", "new": "soft_serve_environment_variables_soft_serve_ssh_public_url" }
+    - { "old": "soft_serve_initial_admin_key", "new": "soft_serve_environment_variables_soft_serve_initial_admin_keys" }
+    - { "old": "soft_serve_anon_access", "new": "soft_serve_environment_variables_soft_serve_anon_access" }
+    - { "old": "soft_serve_allow_keyless", "new": "soft_serve_environment_variables_soft_serve_allow_keyless" }
     - { "old": "soft_serve_container_image_force_pull", "new": "<removed> (the new community.docker.docker_image_pull module handles this natively)" }
 
 - name: Fail if required Soft Serve settings not defined
@@ -25,15 +30,15 @@
     - soft_serve_hostname
     - soft_serve_container_network
     - soft_serve_container_bind_port
-    - soft_serve_ssh_public_url
-    - soft_serve_initial_admin_key
+    - soft_serve_environment_variables_soft_serve_ssh_public_url
+    - soft_serve_environment_variables_soft_serve_initial_admin_keys
 
 # Soft Serve refuses to parse an unknown access level and exits before it ever
 # starts listening, so catching a typo here saves a crash loop later.
 - name: Fail if the Soft Serve anonymous access level is not one Soft Serve knows
   ansible.builtin.fail:
     msg: >-
-      `soft_serve_anon_access` is set to `{{ soft_serve_anon_access }}`, which Soft Serve does not
+      `soft_serve_environment_variables_soft_serve_anon_access` is set to `{{ soft_serve_environment_variables_soft_serve_anon_access }}`, which Soft Serve does not
       understand. Use one of: no-access, read-only, read-write, admin-access - or leave it empty
       to let Soft Serve's own stored setting govern.
-  when: "soft_serve_anon_access | string | length > 0 and soft_serve_anon_access not in ['no-access', 'read-only', 'read-write', 'admin-access']"
+  when: "soft_serve_environment_variables_soft_serve_anon_access | string | length > 0 and soft_serve_environment_variables_soft_serve_anon_access not in ['no-access', 'read-only', 'read-write', 'admin-access']"

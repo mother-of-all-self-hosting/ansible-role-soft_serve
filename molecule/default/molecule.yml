@@ -56,10 +56,10 @@ provisioner:
         # `env` file lets an unknown key - or no key at all - list and clone
         # every repository. Closing both is what lets verify.yml tell "the SSH
         # listener authorizes people" apart from "the SSH listener answers".
-        soft_serve_anon_access: no-access
-        soft_serve_allow_keyless: false
+        soft_serve_environment_variables_soft_serve_anon_access: no-access
+        soft_serve_environment_variables_soft_serve_allow_keyless: false
 
-        # `soft_serve_initial_admin_key` is deliberately absent here: converge.yml
+        # `soft_serve_environment_variables_soft_serve_initial_admin_keys` is deliberately absent here: converge.yml
         # sets it from a key pair generated in prepare.yml, so that verify.yml
         # holds the matching private key. A literal here could only be a public
         # key nobody has the other half of - which is what this scenario used to

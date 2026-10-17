@@ -75,7 +75,7 @@ soft_serve_container_bind_port: 2222
 You also need to set an initial administrator's key by adding the following configuration to your `vars.yml` file:
 
 ```yaml
-soft_serve_initial_admin_key: YOUR_PUBLIC_SSH_KEY_HERE
+soft_serve_environment_variables_soft_serve_initial_admin_keys: YOUR_PUBLIC_SSH_KEY_HERE
 ```
 
 Replace `YOUR_PUBLIC_SSH_KEY_HERE` with your own value.
@@ -85,7 +85,7 @@ Replace `YOUR_PUBLIC_SSH_KEY_HERE` with your own value.
 
 ### Adjusting clone URLs (optional)
 
-Soft Serve advertises a single clone URL to its users: it prints it when a repository is created (`ssh -p … <hostname> repo create …`) and builds the clone command shown in its SSH interface out of it. That URL is `soft_serve_ssh_public_url`, and you need to override it when the SSH port is reached at some other address than the one the container publishes.
+Soft Serve advertises a single clone URL to its users: it prints it when a repository is created (`ssh -p … <hostname> repo create …`) and builds the clone command shown in its SSH interface out of it. That URL is `soft_serve_environment_variables_soft_serve_ssh_public_url`, and you need to override it when the SSH port is reached at some other address than the one the container publishes.
 
 ### Disabling anonymous access for a private Git server (optional)
 
@@ -94,11 +94,11 @@ Soft Serve ships with anonymous access set to `read-only` and with keyless conne
 To avoid it for a private Git server, add the following configuration to your `vars.yml` file:
 
 ```yaml
-soft_serve_anon_access: no-access
-soft_serve_allow_keyless: false
+soft_serve_environment_variables_soft_serve_anon_access: no-access
+soft_serve_environment_variables_soft_serve_allow_keyless: false
 ```
 
-Note that neither affects your own access: the key in `soft_serve_initial_admin_key` is an administrator regardless.
+Note that neither affects your own access: the key in `soft_serve_environment_variables_soft_serve_initial_admin_keys` is an administrator regardless.
 
 ### Extending the configuration
 
@@ -122,9 +122,9 @@ If you use the MASH playbook, the shortcut commands with the [`just` program](ht
 
 After running the command for installation, Soft Serve becomes available at the specified hostname.
 
-You can run a command `ssh example@example.com -p 2222` with the SSH key defined in `soft_serve_initial_admin_key` to see its [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) and follow the instructions to configure Soft Serve further.
+You can run a command `ssh example@example.com -p 2222` with the SSH key defined in `soft_serve_environment_variables_soft_serve_initial_admin_keys` to see its [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) and follow the instructions to configure Soft Serve further.
 
-Note that you have to [finish the configuration yourself](https://github.com/charmbracelet/soft-serve#configuration), otherwise any user with `soft_serve_initial_admin_key` will work as an admin.
+Note that you have to [finish the configuration yourself](https://github.com/charmbracelet/soft-serve#configuration), otherwise any user with `soft_serve_environment_variables_soft_serve_initial_admin_keys` will work as an admin.
 
 ## Troubleshooting
 

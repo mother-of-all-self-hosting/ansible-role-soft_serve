@@ -20,7 +20,7 @@
     # is what the role renders into `env`, and verify.yml holds the private half.
     - name: Make that public key Soft Serve's initial administrator
       ansible.builtin.set_fact:
-        soft_serve_initial_admin_key: "{{ soft_serve_molecule_admin_public_key.content | b64decode | trim }}"
+        soft_serve_environment_variables_soft_serve_initial_admin_keys: "{{ soft_serve_molecule_admin_public_key.content | b64decode | trim }}"
 
     - name: Include roles for Soft Serve Molecule tests
       ansible.builtin.include_role:
@@ -49,7 +49,7 @@
           container_image: "{{ soft_serve_container_image }}"
           base_path: "{{ soft_serve_base_path }}"
           data_path: "{{ soft_serve_data_path }}"
-          ssh_public_url: "{{ soft_serve_ssh_public_url }}"
+          ssh_public_url: "{{ soft_serve_environment_variables_soft_serve_ssh_public_url }}"
 
 - name: Ensure Soft Serve service is started
   hosts: all
