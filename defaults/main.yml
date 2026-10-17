@@ -112,6 +112,12 @@ soft_serve_container_cleanup_command: |
   echo "Failed to remove stale container {{ soft_serve_identifier }} after {{ soft_serve_container_cleanup_timeout_seconds }} attempts" >&2;
   exit 1
 
+# Specify the name of the server that will appear in the TUI
+soft_serve_environment_variables_soft_serve_name: "{{ soft_serve_hostname }}"
+
+# Specify SSH listen address
+soft_serve_environment_variables_soft_serve_ssh_listen_addr: "{{ soft_serve_container_bind_port }}"
+
 soft_serve_environment_variables_soft_serve_initial_admin_keys: ""
 
 # Controls the access level granted to users Soft Serve does not know: an SSH
