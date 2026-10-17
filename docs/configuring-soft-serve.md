@@ -25,6 +25,12 @@ Soft Serve is a self-hostable [Git](https://git-scm.com/) server for the command
 
 See the project's [documentation](https://github.com/charmbracelet/soft-serve/blob/main/README.md) to learn what Soft Serve does and why it might be useful to you.
 
+## Prerequisites
+
+To run an Soft Serve it is necessary to prepare a database. You can use [Postgres](https://www.postgresql.org/) or [SQLite](https://www.sqlite.org/). The SQLite database file will be automatically created by the service if it is enabled.
+
+If you are looking for an Ansible role for Postgres, you can check out [this role (ansible-role-postgres)](https://github.com/mother-of-all-self-hosting/ansible-role-postgres) maintained by the [Mother-of-All-Self-Hosting (MASH)](https://github.com/mother-of-all-self-hosting) team.
+
 ## Adjusting the playbook configuration
 
 To enable Soft Serve with this role, add the following configuration to your `vars.yml` file.
@@ -58,6 +64,20 @@ soft_serve_hostname: "example.com"
 After adjusting the hostname, make sure to adjust your DNS records to point the domain to your server.
 
 **Note**: hosting Soft Serve under a subpath (by configuring the `soft_serve_path_prefix` variable) does not seem to be possible due to Soft Serve's technical limitations.
+
+### Specify database
+
+Soft Serve can use either Postgres or SQLite, and you need to choose one.
+
+To use Postgres, add the following configuration to your `vars.yml` file:
+
+```yaml
+soft_serve_database_type: postgres
+```
+
+Set `sqlite` to use SQLite. The SQLite database is stored in the directory specified with `soft_serve_data_path`.
+
+For other settings, check variables such as `soft_serve_database_*` on [`defaults/main.yml`](../defaults/main.yml).
 
 ### Configure SSH port
 

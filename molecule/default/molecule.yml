@@ -51,6 +51,8 @@ provisioner:
         soft_serve_hostname: soft-serve.molecule.local
         soft_serve_container_bind_port: 8022
 
+        soft_serve_database_type: sqlite
+
         # Soft Serve seeds its database with `anon_access = read-only` and
         # `allow_keyless = true`, so an instance that never saw this role's
         # `env` file lets an unknown key - or no key at all - list and clone

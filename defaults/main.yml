@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
 # SPDX-FileCopyrightText: 2023-2026 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2024 Julian-Samuel Gebühr
 # SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
 # SPDX-FileCopyrightText: 2025 MASH project contributors
 # SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
@@ -111,6 +112,23 @@ soft_serve_container_cleanup_command: |
   done;
   echo "Failed to remove stale container {{ soft_serve_identifier }} after {{ soft_serve_container_cleanup_timeout_seconds }} attempts" >&2;
   exit 1
+
+# Specify a database driver to use
+# Valid values: postgres, sqlite
+soft_serve_database_type: ""
+
+# Specify database configuration
+soft_serve_database_hostname: ""
+soft_serve_database_port: 5432
+soft_serve_database_username: softserve
+soft_serve_database_password: ""
+# Specify SSL mode for Postgres database server
+# By default, we expect a local container (without SSL), so attempting SSL connections is not necessary.
+# Valid values: see https://www.postgresql.org/docs/11/libpq-ssl.html#LIBPQ-SSL-SSLMODE-STATEMENTS
+soft_serve_database_sslmode: disable
+soft_serve_database_name: softserve
+
+soft_serve_environment_variables_soft_serve_db_data_source: postgres://{{ soft_serve_database_username }}:{{ soft_serve_database_password }}@{{ soft_serve_database_hostname }}:{{ soft_serve_database_port }}/{{ soft_serve_database_name }}?sslmode={{ soft_serve_database_sslmode }}
 
 # Specify the name of the server that will appear in the TUI
 soft_serve_environment_variables_soft_serve_name: "{{ soft_serve_hostname }}"
