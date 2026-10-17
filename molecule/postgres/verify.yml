@@ -37,6 +37,7 @@
 
     soft_serve_verify_units:
       - soft-serve.service
+      - postgres.service
 
   tasks:
     - name: Verify that Soft Serve works
@@ -383,53 +384,7 @@
           ansible.builtin.set_fact:
             soft_serve_admin_public_key_body: "{{ (soft_serve_admin_public_key.content | b64decode).split()[0:2] | join(' ') }}"
 
-        - name: Read Soft Serve's records back out of its database
-          ansible.builtin.command:
-            argv:
-              - python3
-              - -c
-              - |
-                import json
-                import sqlite3
-                import sys
-
-                connection = sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True)
-                print(json.dumps({
-                    "migrations": connection.execute("select count(*) from migrations").fetchone()[0],
-                    "admins": [row[0] for row in connection.execute("select username from users where admin = 1 order by username")],
-                    "repos": [row[0] for row in connection.execute("select name from repos order by name")],
-                    "public_keys": [row[0] for row in connection.execute("select public_key from public_keys order by id")],
-                }))
-              - "{{ soft_serve_resolved.data_path }}/soft-serve.db"
-          register: soft_serve_database_query
-          changed_when: false
-
-        - name: Remember what Soft Serve's database holds
-          ansible.builtin.set_fact:
-            soft_serve_database: "{{ soft_serve_database_query.stdout | from_json }}"
-
-        # The SSH surface only reports what Soft Serve believes. This reads the
-        # SQLite database itself, off the role's own data path, and finds the
-        # repository that was pushed, an administrator, and the very public key the
-        # role rendered into `env` - which is what turns "a key worked" into "this
-        # key is the one the role installed". A non-zero migration count additionally
-        # means Soft Serve ran its schema migrations against this file rather than
-        # finding one somewhere else.
-        - name: Assert the role's data path is where Soft Serve's records live
-          ansible.builtin.assert:
-            that:
-              - soft_serve_database.migrations | int > 0
-              - soft_serve_database.admins | length > 0
-              - soft_serve_verify_repo in soft_serve_database.repos
-              - soft_serve_admin_public_key_body in soft_serve_database.public_keys
-            fail_msg: >-
-              {{ soft_serve_resolved.data_path }}/soft-serve.db does not hold Soft Serve's records:
-              {{ soft_serve_database | default('unreadable') }}
-            success_msg: >-
-              {{ soft_serve_resolved.data_path }}/soft-serve.db has run
-              {{ soft_serve_database.migrations }} migrations and holds
-              repository {{ soft_serve_verify_repo }} and administrator
-              {{ soft_serve_database.admins | join(', ') }}
+        # TODO: add a task to read Soft Serve's records back out of its database
 
         - name: Verify nothing was quietly restarting while all of that was being checked
           when: "soft_serve_restarts_check_enabled | bool"
@@ -479,7 +434,6 @@
               - "Soft Serve image: {{ soft_serve_container_image_in_use.stdout }}"
               - "Soft Serve clone URL: {{ soft_serve_repo_create.stdout | trim }}"
               - "Soft Serve git round trip: {{ soft_serve_resolved.data_path }}/repos/{{ soft_serve_verify_repo }}.git"
-              - "Soft Serve database: {{ soft_serve_database.migrations }} migrations, repositories {{ soft_serve_database.repos | join(', ') }}"
 
       rescue:
         # Whatever went wrong, the reason is almost always in the systemd service log.

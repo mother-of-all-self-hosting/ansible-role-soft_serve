@@ -30,6 +30,8 @@ platforms:
     pre_build_image: true
 provisioner:
   name: ansible
+  playbooks:
+    prepare: ../default/prepare.yml
   config_options:
     defaults:
       callback_result_format: yaml
@@ -51,7 +53,17 @@ provisioner:
         soft_serve_hostname: soft-serve.molecule.local
         soft_serve_container_bind_port: 8022
 
-        soft_serve_database_type: sqlite
+        # Variables required for Soft Serve to connect to the Postgres database
+        soft_serve_database_type: postgres
+        soft_serve_database_hostname: "{{ postgres_connection_hostname }}"
+        soft_serve_database_port: "{{ postgres_connection_port }}"
+        soft_serve_database_username: my_database_username
+        soft_serve_database_password: my_database_password
+        soft_serve_database_name: donetick
+        soft_serve_systemd_required_services_list_auto: |
+          {{
+            (['postgres.service'])
+          }}
 
         # Soft Serve seeds its database with `anon_access = read-only` and
         # `allow_keyless = true`, so an instance that never saw this role's
@@ -66,8 +78,38 @@ provisioner:
         # holds the matching private key. A literal here could only be a public
         # key nobody has the other half of - which is what this scenario used to
         # carry, leaving the instance under test with no administrator at all.
+
+        # Variables for Postgres
+        postgres_uid: 1000
+        postgres_gid: 1000
+        postgres_connection_password: postgres_password
+        postgres_container_network: "{{ soft_serve_container_network }}"
+        postgres_managed_databases: |
+          {{
+            [{
+              'name': soft_serve_database_name,
+              'username': soft_serve_database_username,
+              'password': soft_serve_database_password,
+            }]
+          }}
   env:
     # Workaround for https://github.com/ansible/molecule/issues/4391
     ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles
+scenario:
+  # See: https://docs.ansible.com/projects/molecule/configuration/?h=test_sequence#scenario
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    # Disable idempotence test for now due to ansible-role-postgres
+    # - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
 verifier:
   name: ansible
