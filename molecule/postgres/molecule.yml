@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    force: true
+driver:
+  name: docker
+platforms:
+  - name: soft-serve-${MOLECULE_DISTRO:-ubuntu2604}-default
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2604}-ansible:latest"
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      # Docker inside the instance stores images via containerd. Its storage
+      # cannot use overlay on top of the instance's own overlay filesystem, so a
+      # volume puts it on a real filesystem.
+      - /var/lib/containerd
+    # Remove volumes along with the instance, so that local runs do not leave
+    # gigabytes behind.
+    keep_volumes: false
+    cgroupns_mode: host
+    privileged: true
+    pre_build_image: true
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_result_format: yaml
+  inventory:
+    group_vars:
+      all:
+        # Helper variables
+        soft_serve_debug_service_enabled: false
+        soft_serve_restarts_check_enabled: true
+
+        # Variables for Soft Serve
+        soft_serve_uid: 1000
+        soft_serve_gid: 1000
+
+        # Deliberately not `localhost`, and deliberately not Soft Serve's own
+        # port of 23231. Soft Serve advertises `ssh://localhost:23231` when it
+        # is not told otherwise, so a clone URL carrying this hostname and this
+        # port can only have come from the `env` file the role rendered.
+        soft_serve_hostname: soft-serve.molecule.local
+        soft_serve_container_bind_port: 8022
+
+        soft_serve_database_type: sqlite
+
+        # Soft Serve seeds its database with `anon_access = read-only` and
+        # `allow_keyless = true`, so an instance that never saw this role's
+        # `env` file lets an unknown key - or no key at all - list and clone
+        # every repository. Closing both is what lets verify.yml tell "the SSH
+        # listener authorizes people" apart from "the SSH listener answers".
+        soft_serve_environment_variables_soft_serve_anon_access: no-access
+        soft_serve_environment_variables_soft_serve_allow_keyless: false
+
+        # `soft_serve_environment_variables_soft_serve_initial_admin_keys` is deliberately absent here: converge.yml
+        # sets it from a key pair generated in prepare.yml, so that verify.yml
+        # holds the matching private key. A literal here could only be a public
+        # key nobody has the other half of - which is what this scenario used to
+        # carry, leaving the instance under test with no administrator at all.
+  env:
+    # Workaround for https://github.com/ansible/molecule/issues/4391
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/..:/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:~/.ansible/roles
+verifier:
+  name: ansible

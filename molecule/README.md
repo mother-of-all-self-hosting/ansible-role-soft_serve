@@ -60,6 +60,10 @@ Soft Serve is reachable over SSH and nothing else, so the scenario is built arou
 
 The scenario deliberately runs on a hostname and a port that are not Soft Serve's own defaults, so that these assertions cannot be satisfied by an instance which never saw the role's configuration.
 
+### `postgres`
+
+Tests a standard Soft Serve installation with Postgres database.
+
 ## Running
 
 By default it is configured to run the scenarios on Ubuntu 26.04.
