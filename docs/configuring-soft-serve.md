@@ -124,7 +124,7 @@ After running the command for installation, Soft Serve becomes available at the 
 
 You can run a command `ssh example@example.com -p 2222` with the SSH key defined in `soft_serve_environment_variables_soft_serve_initial_admin_keys` to see its [TUI](https://en.wikipedia.org/wiki/Text-based_user_interface) and follow the instructions to configure Soft Serve further.
 
-Note that you have to [finish the configuration yourself](https://github.com/charmbracelet/soft-serve#configuration), otherwise any user with `soft_serve_environment_variables_soft_serve_initial_admin_keys` will work as an admin.
+Note that you have to [finish the configuration yourself](https://github.com/charmbracelet/soft-serve#configuration). **Otherwise any user with the SSK key specified with `soft_serve_environment_variables_soft_serve_initial_admin_keys` will be able to log in as an administrator.**
 
 ## Troubleshooting
 
