@@ -57,8 +57,8 @@ provisioner:
         soft_serve_database_type: postgres
         soft_serve_database_hostname: "{{ postgres_connection_hostname }}"
         soft_serve_database_port: "{{ postgres_connection_port }}"
-        soft_serve_database_username: my_database_username
-        soft_serve_database_password: my_database_password
+        soft_serve_database_username: /#@my_database_username?%
+        soft_serve_database_password: /#@my_database_password?%
         soft_serve_database_name: donetick
         soft_serve_systemd_required_services_list_auto: |
           {{

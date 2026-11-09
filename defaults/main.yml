@@ -128,7 +128,7 @@ soft_serve_database_password: ""
 soft_serve_database_sslmode: disable
 soft_serve_database_name: softserve
 
-soft_serve_environment_variables_soft_serve_db_data_source: postgres://{{ soft_serve_database_username }}:{{ soft_serve_database_password }}@{{ soft_serve_database_hostname }}:{{ soft_serve_database_port }}/{{ soft_serve_database_name }}?sslmode={{ soft_serve_database_sslmode }}
+soft_serve_environment_variables_soft_serve_db_data_source: postgres://{{ soft_serve_database_username | urlencode | replace('/', '%2F') }}:{{ soft_serve_database_password | urlencode | replace('/', '%2F') }}@{{ soft_serve_database_hostname }}:{{ soft_serve_database_port }}/{{ soft_serve_database_name }}?sslmode={{ soft_serve_database_sslmode }}
 
 # Specify the name of the server that will appear in the TUI
 soft_serve_environment_variables_soft_serve_name: "{{ soft_serve_hostname }}"
