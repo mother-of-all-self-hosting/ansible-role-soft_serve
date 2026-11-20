@@ -26,11 +26,8 @@
       You need to define a required configuration setting (`{{ item }}`).
   when: "lookup('vars', item, default='') | string | length == 0"
   with_items:
-    - soft_serve_identifier
     - soft_serve_uid
     - soft_serve_gid
-    - soft_serve_hostname
-    - soft_serve_container_network
     - soft_serve_container_bind_port
     - soft_serve_database_type
     - soft_serve_environment_variables_soft_serve_ssh_public_url
