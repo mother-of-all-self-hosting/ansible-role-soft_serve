@@ -19,6 +19,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Setting up Soft Serve
 
+>[!WARNING]
+> The upstream project has been discontinued. There will not be security patches, bug fixes, or feature improvements. Refer to [the security advisories at GitHub](https://github.com/charmbracelet/soft-serve/security/advisories/) for a list of unfixed issues.
+
 This is an [Ansible](https://www.ansible.com/) role which installs [Soft Serve](https://github.com/charmbracelet/soft-serve) to run as a [Docker](https://www.docker.com/) container wrapped in a systemd service.
 
 Soft Serve is a self-hostable [Git](https://git-scm.com/) server for the command line.

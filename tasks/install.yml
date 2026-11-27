@@ -4,6 +4,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 ---
+- name: Inject a message that the Soft Serve project has been discontinued
+  ansible.builtin.set_fact:
+    devture_playbook_runtime_messages_list: |
+      {{
+        devture_playbook_runtime_messages_list | default([])
+        +
+        [
+          "WARNING: The Soft Serve project has been discontinued. There will not be security patches, bug fixes, or feature improvements."
+        ]
+      }}
+
 - name: Ensure Soft Serve paths exist
   ansible.builtin.file:
     path: "{{ item }}"
